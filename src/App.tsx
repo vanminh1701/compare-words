@@ -1,5 +1,8 @@
-import React, { useState, useCallback } from "react";
 import "./App.css";
+
+import React, { useCallback, useState } from "react";
+
+import commitAlgor from "./commitAlgor";
 
 const words = [
   {
@@ -27,10 +30,12 @@ const string = words.reduce((acc, item) => acc.concat(item.word + " "), "");
 function App() {
   const [str1, setStr1] = useState(string);
   const [str2, setStr2] = useState(string);
+  const [result, setResult] = useState<any>();
 
   const onCompare = () => {
-    const { arrayCommon } = findCommon("aced", "abc");
-    console.log("arrayCommon", arrayCommon);
+    const { result } = findCommon(str1, str2);
+    console.log("%cCommit Algor", "color: red", commitAlgor(str1, str2));
+    setResult(result);
   };
 
   const onChange = useCallback((event) => {
@@ -42,7 +47,7 @@ function App() {
     <div>
       <div className="App">
         <textarea
-          // onChange={onChange}
+          onChange={onChange}
           name="str1"
           placeholder="type here text here..."
           rows={5}
@@ -57,6 +62,13 @@ function App() {
         />
       </div>
       <button onClick={onCompare}>Compare (longest common substring)</button>
+      <div
+        style={{
+          color: "red",
+        }}
+      >
+        {result}
+      </div>
     </div>
   );
 }
