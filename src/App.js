@@ -6,10 +6,9 @@ const DEL = "del";
 const INITIAL = "He";
 const seqChars = [
   { text: "H", id: "10_0.-1" },
-  // { text: "e", id: "10_1" },
   { text: "e", id: "10_0.0" },
 ];
-const seqWords = [{ value: "He", id: "10" }];
+// const seqWords = [{ value: "He", id: "10" }];
 
 function App() {
   // const [str1, setStr1] = useState(string);
@@ -67,25 +66,16 @@ function App() {
     }
   }, []);
 
-  const onChangeCapture = useCallback((event) => {
-    console.log("Before change: ", event.target.selectionStart);
-  }, []);
-
-  const onChange = useCallback(
-    (event) => {
-      const { value } = event.target;
-      const prevValue = prevChangeValue.current;
-
-      const startPosition = event.target.selectionStart;
-      const endPosition = event.target.selectionEnd;
-
-      console.log("value", startPosition, endPosition);
+  const onUpdateSequence = useCallback(
+    (value, action) => {
+      // const prevValue = prevChangeValue.current;
+      // let action = value.length > prevValue.length ? INS : DEL;
+      console.log("update", value, action);
 
       let vIndex = 0;
       let seqIndex = 0;
 
       while (seqChars[seqIndex]?.text === "") seqIndex++;
-
       while (seqChars[seqIndex]?.text === value[vIndex]) {
         while (seqChars[seqIndex + 1]?.text === "") seqIndex++;
         // update both
@@ -94,7 +84,6 @@ function App() {
       }
 
       let handlingIndex = seqIndex;
-      let action = value.length > prevValue.length ? INS : DEL;
       if (action === DEL) {
         const deletedChar = seqChars[handlingIndex];
 
@@ -117,12 +106,56 @@ function App() {
       originalRef.current.value = prevChangeValue.current;
       prevChangeValue.current = value;
 
-      console.log(
-        JSON.parse(JSON.stringify(seqChars)),
-        prevChangeValue.current
-      );
+      console.log(JSON.parse(JSON.stringify(seqChars)));
     },
     [_generateId]
+  );
+
+  const onChange = useCallback(
+    (event) => {
+      const { value } = event.target;
+
+      const numberOfChanges = value.length - prevChangeValue.current.length;
+      if (numberOfChanges < -1) {
+        const prevValue = prevChangeValue.current;
+        let i = 0; // index of first deleted char
+        //prettier-ignore
+        while (value[value.length - 1 - i] === prevValue[prevValue.length - 1 - i]) i++;
+
+        // reverse i from end of string
+        i = prevValue.length - 1 - i;
+        for (let index = i; index >= 0; index--) {
+          const valueEachChar =
+            prevValue.substring(0, index) + prevValue.substring(i + 1);
+          onUpdateSequence(valueEachChar, DEL);
+        }
+      } else if (numberOfChanges === -1) {
+        onUpdateSequence(value, DEL);
+      } else if (numberOfChanges === 1) {
+        onUpdateSequence(value, INS);
+      } else {
+        const prevValue = prevChangeValue.current;
+        let i = 0; // index of first change char
+        while (value[i] === prevValue[i]) i++;
+
+        if (i === prevValue.length) {
+          // add new at the end
+          for (let index = 1; index <= numberOfChanges; index++) {
+            const valueEachChange = prevValue + value.slice(i, i + index);
+            onUpdateSequence(valueEachChange, INS);
+          }
+        } else {
+          for (let index = 1; index <= numberOfChanges; index++) {
+            const valueEachChange =
+              prevValue.slice(0, i) +
+              value.slice(i, i + index) +
+              prevValue.slice(i);
+            onUpdateSequence(valueEachChange, INS);
+          }
+        }
+      }
+    },
+    [onUpdateSequence]
   );
 
   return (
@@ -138,7 +171,6 @@ function App() {
         <textarea
           id="str2"
           name="str2"
-          onChangeCapture={onChangeCapture}
           onChange={onChange}
           placeholder="type text you want to compare..."
           rows={5}
